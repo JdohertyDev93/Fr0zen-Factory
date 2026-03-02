@@ -1,12 +1,16 @@
 [
   {
     "name": "IShowSpeed",
-    "id": "UCWsDFcIhY2DBi3GB5uykGXA",
-    "brand": "Speed x Fr0zen"
+    "platform": "youtube",
+    "id": "UCOm9U0K8S7-v90_6_6N6u_w",
+    "brand": "Fr0zen_Waffle",
+    "KEEP": "Yes"
   },
   {
-    "name": "Kai Cenat Live",
-    "id": "UCvCfpQXRXdJdL07pzTIA6Cw",
-    "brand": "Kai x Fr0zen"
+    "name": "KaiCenat",
+    "platform": "twitch",
+    "id": "kai_cenat",
+    "brand": "Fr0zen_Waffle",
+    "KEEP": "Yes"
   }
 ]
