@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+from datetime import datetime, timedelta
 from googleapiclient.discovery import build
 
 # --- HELPER FUNCTIONS ---
@@ -95,24 +96,54 @@ def discover_trending_kick():
 
 def update_accounts_json(new_accounts):
     filename = 'accounts.json'
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
     if os.path.exists(filename):
         with open(filename, 'r') as f:
-            existing = json.load(f)
+            existing_list = json.load(f)
     else:
-        existing = []
+        existing_list = []
     
-    existing_ids = {a.get('id') for a in existing}
+    # 1. Map existing for easy lookup
+    existing_map = {a.get('id'): a for a in existing_list}
     added = 0
+    
+    # 2. Add or Refresh timestamps
     for acc in new_accounts:
-        if acc['id'] not in existing_ids:
-            existing.append(acc)
-            existing_ids.add(acc['id'])
+        if acc['id'] in existing_map:
+            # Update trending date so they don't get pruned
+            existing_map[acc['id']]['last_trending'] = now_str
+        else:
+            acc['last_trending'] = now_str
+            acc['KEEP'] = "No" # Default for new discoveries
+            existing_list.append(acc)
             added += 1
             
-    if added > 0:
-        with open(filename, 'w') as f:
-            json.dump(existing, f, indent=4)
-        print(f"✅ Added {added} new trending streamers to your list!")
+    # 3. Prune logic: Remove if 'KEEP' is No AND older than 24h
+    cutoff = datetime.now() - timedelta(hours=24)
+    final_list = []
+    removed = 0
+    
+    for a in existing_list:
+        if a.get('KEEP') == "Yes":
+            final_list.append(a)
+            continue
+            
+        ts_str = a.get('last_trending')
+        if ts_str:
+            ts = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
+            if ts > cutoff:
+                final_list.append(a)
+            else:
+                removed += 1
+        else:
+            removed += 1 # No timestamp + No KEEP = Delete
+
+    with open(filename, 'w') as f:
+        json.dump(final_list, f, indent=4)
+        
+    if added > 0 or removed > 0:
+        print(f"📊 Cleanup Complete: Added {added}, Pruned {removed} stale accounts.")
 
 # --- LIVE CHECK MODULES ---
 
@@ -159,7 +190,7 @@ def main():
     t_sec = os.environ.get('TWITCH_CLIENT_SECRET')
     t_token = get_twitch_token(t_id, t_sec) if t_id else None
 
-    # 2. DISCOVERY: Find trending content
+    # 2. DISCOVERY & PRUNING: Find trends and clean up old trials
     trend_t = discover_trending_twitch(t_id, t_token) if t_token else []
     trend_y = discover_trending_youtube(youtube)
     trend_k = discover_trending_kick()
