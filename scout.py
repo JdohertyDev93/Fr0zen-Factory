@@ -28,7 +28,6 @@ def send_telegram_alert(streamer_name, link, brand_suffix, platform, is_live=Fal
     requests.post(url, json=payload)
 
 def check_youtube_live_free(channel_id):
-    # The Zero-Quota Hack for YouTube Live
     url = f"https://www.youtube.com/channel/{channel_id}/live"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -88,7 +87,7 @@ def main():
         data = json.load(f)
     streamers = data if isinstance(data, list) else data.get('accounts', [])
 
-    # 2. Load Memory
+    # 2. Load Memory (Now supports lists!)
     memory_file = 'tracked_videos.json'
     if os.path.exists(memory_file):
         with open(memory_file, 'r') as f:
@@ -122,13 +121,11 @@ def main():
 
         try:
             if platform == "youtube":
-                # Step A: Check if they are LIVE (0 Quota)
                 latest_id = check_youtube_live_free(account_id)
                 if latest_id:
                     is_live = True
                     link = f"https://www.youtube.com/watch?v={latest_id}"
                 
-                # Step B: If NOT live, check for new VOD uploads (1 Quota)
                 if not latest_id and youtube:
                     playlist_id = get_uploads_playlist_id(account_id)
                     request = youtube.playlistItems().list(part="snippet", playlistId=playlist_id, maxResults=1)
@@ -155,13 +152,21 @@ def main():
 
         # 5. Alert if New Content Found
         if latest_id:
-            if tracked.get(name) != latest_id:
+            # Grab the streamer's history (convert old strings to lists if needed)
+            history = tracked.get(name, [])
+            if isinstance(history, str):
+                history = [history]
+
+            if latest_id not in history:
                 print(f"New content found for {name} on {platform}: {latest_id}")
                 send_telegram_alert(name, link, brand, platform, is_live)
-                tracked[name] = latest_id
+                
+                # Add to history and keep only the last 10 to save space
+                history.append(latest_id)
+                tracked[name] = history[-10:] 
                 updated = True
             else:
-                print(f"No new content for {name} on {platform}.")
+                print(f"Content {latest_id} for {name} has already been processed.")
 
     # 6. Save Memory
     if updated:
