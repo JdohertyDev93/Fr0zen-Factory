@@ -1,38 +1,32 @@
-name: Fr0zen Scout
+name: Fr0zen Scout 24/7
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
-  workflow_dispatch:
+    # This cron expression runs the scout every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Allows you to run it manually for testing
 
 jobs:
-  scout:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.11' # Updated to 3.11 to fix the Google warning!
+          python-version: '3.10'
 
       - name: Install Dependencies
-        run: pip install google-api-python-client requests
+        run: |
+          pip install requests google-api-python-client
 
       - name: Run Fr0zen Scout
         env:
           YT_API_KEY: ${{ secrets.YT_API_KEY }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
           TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scout.py
-
-      - name: Save Memory
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "🤖 Fr0zen AI: Updated tracked videos"
