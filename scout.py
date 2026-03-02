@@ -21,15 +21,20 @@ def send_telegram_alert(streamer_name, link, brand_suffix, platform, is_live=Fal
     # DISPATCHER COMMAND: Leads with /clip for the Colab Forge to hear
     message = (
         f"/clip {link}\n\n"
-        f"❄️ **FR0ZEN SCOUT ALERT** ❄️\n\n"
-        f"{platform_icon} **{streamer_name}** {status_text} on {platform.capitalize()}!\n"
+        f"❄️ FR0ZEN SCOUT ALERT ❄️\n\n"
+        f"{platform_icon} {streamer_name} {status_text} on {platform.capitalize()}!\n"
         f"Brand Target: {brand_suffix}\n"
-        f"*(Forge is now processing this link)*"
+        f"(Forge is now processing this link)"
     )
     
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
-    requests.post(url, json=payload)
+    # Removed parse_mode="Markdown" to stop the underscore crash!
+    payload = {"chat_id": chat_id, "text": message} 
+    response = requests.post(url, json=payload)
+    
+    # If Telegram rejects it, print the exact reason to the GitHub console
+    if response.status_code != 200:
+        print(f"❌ TELEGRAM UPLOAD FAILED: {response.text}")
 
 # --- DISCOVERY MODULES ---
 
