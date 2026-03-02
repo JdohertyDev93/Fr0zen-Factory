@@ -15,12 +15,14 @@ def send_telegram_alert(streamer_name, link, brand_suffix, platform, is_live=Fal
     platform_icon = "🔴" if platform == "youtube" else "🟣" if platform == "twitch" else "🟢"
     status_text = "is LIVE right now" if is_live else "just uploaded a new video"
     
+    # --- DISPATCHER INTEGRATION ---
+    # We lead with "/clip [Link]" so the Colab Forge can detect the task
     message = (
+        f"/clip {link}\n\n"
         f"❄️ **FR0ZEN SCOUT ALERT** ❄️\n\n"
         f"{platform_icon} **{streamer_name}** {status_text} on {platform.capitalize()}!\n"
-        f"Brand Target: {brand_suffix}\n\n"
-        f"Link: {link}\n\n"
-        f"*(Open Colab to start the Fr0zen Edit)*"
+        f"Brand Target: {brand_suffix}\n"
+        f"*(Forge is now processing this link)*"
     )
     
     url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -87,7 +89,7 @@ def main():
         data = json.load(f)
     streamers = data if isinstance(data, list) else data.get('accounts', [])
 
-    # 2. Load Memory (Now supports lists!)
+    # 2. Load Memory
     memory_file = 'tracked_videos.json'
     if os.path.exists(memory_file):
         with open(memory_file, 'r') as f:
@@ -152,7 +154,6 @@ def main():
 
         # 5. Alert if New Content Found
         if latest_id:
-            # Grab the streamer's history (convert old strings to lists if needed)
             history = tracked.get(name, [])
             if isinstance(history, str):
                 history = [history]
@@ -161,7 +162,6 @@ def main():
                 print(f"New content found for {name} on {platform}: {latest_id}")
                 send_telegram_alert(name, link, brand, platform, is_live)
                 
-                # Add to history and keep only the last 10 to save space
                 history.append(latest_id)
                 tracked[name] = history[-10:] 
                 updated = True
