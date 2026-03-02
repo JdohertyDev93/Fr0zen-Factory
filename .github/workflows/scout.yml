@@ -7,6 +7,10 @@ on:
     types: [heartbeat] # This is the "shout" it will listen for
   workflow_dispatch: # Allows manual button click
 
+  # ⚠️ ADD THIS: Gives the script permission to write to your repo
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
