@@ -1,10 +1,11 @@
-name: YouTube ID Hunter (Manual)
+name: YouTube ID Hunter (Auto & Manual)
 
-# The 'workflow_dispatch' trigger creates a manual "Run" button in GitHub Actions
 on:
-  workflow_dispatch: 
+  push:
+    paths:
+      - 'accounts.json' # 🔥 This tells it to run automatically whenever you edit the accounts file!
+  workflow_dispatch: # Keeps the manual button just in case
 
-# Grants the bot permission to save the updated accounts.json back to your repo
 permissions:
   contents: write
 
@@ -18,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.11' # ⬆️ Upgraded to 3.11 to remove that Google warning
 
       - name: Install Dependencies
         run: |
@@ -34,5 +35,4 @@ jobs:
           git config --global user.name "Fr0zen-Hunter-Bot"
           git config --global user.email "hunter@fr0zen.waffle"
           git add accounts.json
-          # The script below checks if the file actually changed before trying to commit
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Locked in new YouTube IDs" && git push)
